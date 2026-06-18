@@ -251,3 +251,15 @@ footer .disclaimer {
 @media (max-width: 480px) {
     .search-controls { flex-direction: column; }
 }
+
+/* ─────────────────────────────────────────────────────────────
+   PWA: offline indicator
+   ───────────────────────────────────────────────────────────── */
+#offline-banner {
+    background: #fff3e0;
+    color: #e65100;
+    text-align: center;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+    border-bottom: 1px solid #ffcc80;
+}

@@ -39,6 +39,35 @@ def index():
 
 
 # ─────────────────────────────────────────────────────────────
+# PWA: manifest + service worker
+# Both files live in /static/ and Flask normally serves them via
+# the static route, but we need explicit Content-Type for the
+# manifest and explicit no-cache for the service worker (otherwise
+# browsers will keep using a stale sw.js after a deploy).
+# ─────────────────────────────────────────────────────────────
+from flask import send_from_directory  # noqa: E402
+
+
+@app.get("/manifest.webmanifest")
+def pwa_manifest():
+    return send_from_directory(
+        app.static_folder,
+        "manifest.webmanifest",
+        mimetype="application/manifest+json",
+    )
+
+
+@app.get("/sw.js")
+def pwa_service_worker():
+    resp = send_from_directory(app.static_folder, "sw.js", mimetype="application/javascript")
+    # Service workers must NOT be cached by the browser — otherwise
+    # the new version won't take effect after a deploy.
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Service-Worker-Allowed"] = "/"
+    return resp
+
+
+# ─────────────────────────────────────────────────────────────
 # API
 # ─────────────────────────────────────────────────────────────
 @app.get("/api/search")

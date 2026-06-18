@@ -2,15 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>NickelTrack — Low Nickel Day Planner</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#2e7d32">
+    <meta name="description" content="Low-nickel food tracking — search, log, and stay under your daily nickel target.">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/icons/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="/static/icons/icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/icons/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="NickelTrack">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <script>
+      // Register the service worker as early as possible so the
+      // app shell gets cached on first visit.
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[pwa] service worker registered', reg.scope))
+            .catch(err => console.warn('[pwa] service worker registration failed', err));
+        });
+      }
+    </script>
 </head>
 <body>
     <header>
         <h1>🥬 NickelTrack</h1>
         <p class="tagline">Low-nickel day planner for SNAS · Reference tool — consult your dermatologist.</p>
     </header>
+
+    <div id="offline-banner" hidden>
+        📴 You're offline — showing cached results. Last sync: <span id="last-sync">never</span>.
+    </div>
 
     <main>
         <!-- Search section -->

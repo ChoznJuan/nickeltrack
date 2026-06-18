@@ -12,6 +12,29 @@ let day = loadDay();
 let profile = localStorage.getItem(PROFILE_KEY) || "adult";
 
 // ─────────────────────────────────────────────────────────────
+// Online/offline indicator
+// (Service worker handles the actual data; this just shows the banner)
+// ─────────────────────────────────────────────────────────────
+function updateOnlineStatus() {
+    const banner = document.getElementById("offline-banner");
+    if (!banner) return;
+    if (navigator.onLine) {
+        banner.hidden = true;
+    } else {
+        const last = localStorage.getItem("nickel…ync") || "never";
+        document.getElementById("last-sync").textContent = last;
+        banner.hidden = false;
+    }
+}
+window.addEventListener("online", updateOnlineStatus);
+window.addEventListener("offline", updateOnlineStatus);
+// Record last successful sync
+window.addEventListener("online", () => {
+    localStorage.setItem("nickel…ync", new Date().toLocaleTimeString());
+});
+updateOnlineStatus();
+
+// ─────────────────────────────────────────────────────────────
 // Storage
 // ─────────────────────────────────────────────────────────────
 function loadDay() {
