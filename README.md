@@ -47,3 +47,4 @@ Push to `main` → auto-deploys.
 ## Schema
 
 DB schema and seed data live in `projects/nickeltrack/scripts/schema.sql` and `ingest_mislankar.py` (kept in the workspace, not the repo — they're one-time bootstrap, not part of the app's lifecycle).
+
