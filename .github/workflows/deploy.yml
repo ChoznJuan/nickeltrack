@@ -34,6 +34,20 @@ jobs:
         mkdir -p ${APP_DIR}/app
         cp -f app.py        ${APP_DIR}/app/app.py
         cp -f env_loader.py ${APP_DIR}/app/env_loader.py
+        # Seed .env from .env.example on first deploy only — never overwrite a real .env.
+        # bootstrap_app.sh already does this for fresh CTs, but be defensive in case
+        # the file got deleted or we're deploying to a CT set up some other way.
+        if [ ! -f ${APP_DIR}/.env ]; then
+          if [ -f ${APP_DIR}/.env.example ]; then
+            cp ${APP_DIR}/.env.example ${APP_DIR}/.env
+            chmod 600 ${APP_DIR}/.env
+            echo "  WARN: created ${APP_DIR}/.env from .env.example — fill in real values before app will start"
+          else
+            echo "  WARN: no .env and no .env.example — app will fail to start until you create ${APP_DIR}/.env"
+          fi
+        else
+          echo "  OK ${APP_DIR}/.env exists, not touching it"
+        fi
         echo "Files synced."
 
     - name: Install/refresh Python dependencies
@@ -50,6 +64,12 @@ jobs:
     - name: Healthcheck
       run: |
         sleep 1
-        curl -fsS -o /dev/null -w "HTTP %{http_code} (app)\n" http://localhost:5100/
-        curl -fsS -o /dev/null -w "HTTP %{http_code} (api)\n" http://localhost:5100/api/config
-        echo "Deployment complete."
+        if curl -fsS -o /dev/null -w "HTTP %{http_code} (app)\n" http://localhost:5100/; then
+          curl -fsS -o /dev/null -w "HTTP %{http_code} (api)\n" http://localhost:5100/api/config
+          echo "Deployment complete."
+        else
+          echo "  WARN: healthcheck failed. Most likely cause: .env is missing or has placeholder values."
+          echo "  Check: ssh juan@<ct-ip> 'cat /opt/nickeltrack/.env' — replace USER/PASS/HOST/DBNAME with real values"
+          sudo -n systemctl status nickeltrack --no-pager -l | head -20
+          exit 1
+        fi
