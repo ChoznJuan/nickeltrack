@@ -154,6 +154,9 @@ _OFF_CATEGORY_MAP: dict[str, str] = {
     "tunas": "medium",
     "canned-tunas": "medium",
     "dark-chocolates": "high",  # already in high
+    "chocolate-spreads": "high",
+    "hazelnut-spreads": "high",
+    "cacao-spreads": "high",
     "milks": "medium",
     "whole-milks": "medium",
     "semi-skimmed-milks": "medium",
@@ -453,11 +456,22 @@ def api_lookup():
     brands = ", ".join(product.get("brands_tags", []) or [product.get("brands", "")]).strip(", ")
     categories_tags = product.get("categories_tags", []) or []
     category, matched_tag = _estimate_category_from_tags(categories_tags)
+    # If we can't match any OFF category, default to "high" (conservative) and
+    # mark the row as an estimate with no specific category source. The schema's
+    # check constraint only allows high/medium/low — "unknown" isn't a valid
+    # value, so we collapse to "high" rather than storing something invalid.
+    if category == "unknown":
+        category = "high"
+        matched_tag = ""  # nothing specific matched
     notes_parts = []
     if brands:
         notes_parts.append(f"Brand: {brands}")
     if matched_tag:
         notes_parts.append(f"Category match: {matched_tag}")
+    elif categories_tags:
+        # We had tags but nothing matched our map. Record what OFF said so a
+        # future maintainer can extend _OFF_CATEGORY_MAP if useful.
+        notes_parts.append(f"OFF categories (no nickel mapping): {', '.join(categories_tags[:6])}")
     notes_parts.append("Imported from Open Food Facts. Nickel estimate based on food category only — verify before relying on it.")
     notes = " · ".join(notes_parts)
     image_url = product.get("image_front_url") or product.get("image_url")
@@ -471,17 +485,12 @@ def api_lookup():
     # Avoid flag: if category is "high", mark as avoid (points = NULL means AVOID)
     if category == "high":
         points = None
-    elif category in ("medium", "low"):
-        # Rough estimate from our local averages:
-        #   medium avg = 35 µg/serving → ~4 pts
-        #   low avg = 4.6 µg/serving → ~0 pts
-        # Mark as estimate by setting a low confidence via notes (no DB column for it)
-        if category == "medium":
-            nickel_ug = 35.0
-            points = 4
-        else:
-            nickel_ug = 5.0
-            points = 0
+    elif category == "medium":
+        nickel_ug = 35.0
+        points = 4
+    elif category == "low":
+        nickel_ug = 5.0
+        points = 0
 
     # Insert or update (idempotent on off_barcode)
     with db() as conn, conn.cursor() as cur:
