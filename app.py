@@ -597,8 +597,20 @@ def api_totals():
             f = cur.fetchone()
             if not f:
                 continue
-            ug = float(f["nickel_ug_per_serving"] or 0) * servings
-            avoid = (f["points"] is None) and servings > 0 and ug > 0
+            nickel = f["nickel_ug_per_serving"]
+            # For v2 OFF imports we have a category but no measured nickel value.
+            # Use the category average from our seed data as a conservative
+            # estimate so the daily total adds up to something meaningful.
+            if nickel is None:
+                nickel = {
+                    "high": 320.0,    # mean of our 14 "high" foods (319.3)
+                    "medium": 35.0,   # mean of our 5 "medium" foods
+                    "low": 5.0,       # mean of our 29 "low" foods
+                }.get(f["category"], 0.0)
+            ug = float(nickel) * servings
+            # A food is "avoid" if it has no point value (NULL in DB). For v2 OFF
+            # imports we set points=NULL whenever category='high' (conservative).
+            avoid = (f["points"] is None) and servings > 0
             # Per-item points: NULL for avoid foods so the UI shows AVOID, not 0.
             # Avoid foods still contribute their µg to the daily total so the user
             # gets warned when they blow past their target.
