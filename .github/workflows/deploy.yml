@@ -24,16 +24,27 @@ jobs:
         set -e
         APP_DIR=/opt/nickeltrack
         echo "Syncing app code to ${APP_DIR}..."
-        mkdir -p ${APP_DIR}
+        mkdir -p ${APP_DIR}/templates ${APP_DIR}/static
+
         # Sync app source + env_loader
         cp -f app.py        ${APP_DIR}/app.py
         cp -f env_loader.py ${APP_DIR}/env_loader.py
-        cp -rf templates    ${APP_DIR}/templates
-        cp -rf static       ${APP_DIR}/static
-        # Working dir for gunicorn (matches systemd unit's WorkingDirectory)
+
+        # Sync directory CONTENTS into the target dirs (not the dirs themselves).
+        # `cp -rf static ${APP_DIR}/static` would create ${APP_DIR}/static/static/
+        # on second-and-later deploys, breaking the served assets. The trailing
+        # `/.` in both source and target copies the contents and merges.
+        cp -rf templates/. ${APP_DIR}/templates/
+        cp -rf static/.    ${APP_DIR}/static/
+        # (same fix for the legacy nested app/ dir the old unit expected)
         mkdir -p ${APP_DIR}/app
         cp -f app.py        ${APP_DIR}/app/app.py
         cp -f env_loader.py ${APP_DIR}/app/env_loader.py
+
+        # Ensure juan owns everything we just wrote (gunicorn runs as root, but
+        # the deploy workflow runs as juan — sometimes perms come out mixed)
+        chown -R juan:juan ${APP_DIR}/static ${APP_DIR}/templates ${APP_DIR}/app || true
+
         # Seed .env from .env.example on first deploy only — never overwrite a real .env.
         # bootstrap_app.sh already does this for fresh CTs, but be defensive in case
         # the file got deleted or we're deploying to a CT set up some other way.
