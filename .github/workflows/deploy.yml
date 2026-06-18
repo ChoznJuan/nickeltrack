@@ -38,7 +38,7 @@ jobs:
 
     - name: Install/refresh Python dependencies
       run: |
-        sudo -n /opt/nickeltrack/venv/bin/pip install --quiet -r requirements.txt
+        /opt/nickeltrack/venv/bin/pip install --quiet -r requirements.txt
         echo "Dependencies up to date."
 
     - name: Restart nickeltrack service
