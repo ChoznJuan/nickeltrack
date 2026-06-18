@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NickelTrack — Low Nickel Day Planner</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>🥬 NickelTrack</h1>
+        <p class="tagline">Low-nickel day planner for SNAS · Reference tool — consult your dermatologist.</p>
+    </header>
+
+    <main>
+        <!-- Search section -->
+        <section id="search-section">
+            <h2>Search foods</h2>
+            <div class="search-controls">
+                <input type="text" id="search-input" placeholder="e.g. chicken, spinach, oats…" autofocus>
+                <select id="category-filter">
+                    <option value="">All categories</option>
+                    <option value="low">Low (&lt;100 µg/kg)</option>
+                    <option value="medium">Medium (100–500)</option>
+                    <option value="high">High (&gt;500)</option>
+                </select>
+            </div>
+            <div id="search-results"></div>
+        </section>
+
+        <!-- Day builder -->
+        <section id="day-section">
+            <h2>Today's day</h2>
+            <div class="day-controls">
+                <label>Profile:
+                    <select id="profile-select">
+                        <option value="adult">Adult (15 pts / 150 µg)</option>
+                        <option value="child">Child &lt;12 (10 pts)</option>
+                        <option value="sensitive">Highly sensitive (5 pts)</option>
+                    </select>
+                </label>
+                <button id="clear-day" class="secondary">Clear day</button>
+            </div>
+            <div id="day-items">
+                <p class="empty">No foods added yet. Search above and click "Add to day".</p>
+            </div>
+            <div id="totals-card">
+                <div class="totals-row">
+                    <span class="totals-label">Nickel</span>
+                    <span id="total-ug" class="totals-value">0 µg</span>
+                    <span id="target-ug" class="totals-target">/ 150 µg</span>
+                </div>
+                <div class="totals-row">
+                    <span class="totals-label">Points</span>
+                    <span id="total-pts" class="totals-value">0</span>
+                    <span id="target-pts" class="totals-target">/ 15</span>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-ug" class="progress-fill ug"></div>
+                </div>
+                <div class="progress-bar">
+                    <div id="progress-pts" class="progress-fill pts"></div>
+                </div>
+                <div id="warning"></div>
+            </div>
+        </section>
+
+        <footer>
+            <details>
+                <summary>About the data</summary>
+                <p>
+                    Nickel values from <strong>Mislankar &amp; Zirwas (2013)</strong> Low-Nickel Diet Scoring System
+                    and the <strong>EFSA 2020 Scientific Opinion on Nickel in Food</strong>.
+                    Scoring: each food is 0–10 points per serving based on µg nickel (10 pts ≈ 91–100 µg;
+                    foods over 100 µg/serving are flagged "avoid"). Daily target is 15 points (≈150 µg).
+                </p>
+                <p class="disclaimer">
+                    ⚠️ This is a reference tool, not medical advice. A low nickel diet should only be
+                    undertaken under supervision of a dermatologist or qualified medical doctor.
+                </p>
+            </details>
+        </footer>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

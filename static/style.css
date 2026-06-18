@@ -1,0 +1,253 @@
+/* NickelTrack — minimal, readable, mobile-first */
+:root {
+    --low-bg: #e8f5e9;
+    --low-fg: #1b5e20;
+    --med-bg: #fff8e1;
+    --med-fg: #e65100;
+    --high-bg: #ffebee;
+    --high-fg: #b71c1c;
+    --bar-ug: #1976d2;
+    --bar-pts: #7b1fa2;
+    --bg: #fafafa;
+    --fg: #212121;
+    --muted: #757575;
+    --border: #e0e0e0;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+}
+
+header {
+    background: linear-gradient(135deg, #2e7d32, #558b2f);
+    color: white;
+    padding: 1.25rem 1.5rem;
+}
+
+header h1 { margin: 0; font-size: 1.5rem; }
+header .tagline { margin: 0.25rem 0 0; opacity: 0.85; font-size: 0.9rem; }
+
+main {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+section {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+}
+
+section h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.search-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.search-controls input[type="text"] {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 1rem;
+}
+
+.search-controls select,
+.day-controls select {
+    padding: 0.6rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+    font-size: 0.9rem;
+}
+
+button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 4px;
+    background: var(--bar-ug);
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+button.secondary {
+    background: white;
+    color: var(--muted);
+    border: 1px solid var(--border);
+}
+
+button:hover { opacity: 0.85; }
+
+/* Food results */
+.food-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 0.75rem;
+    margin: 0.4rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: white;
+}
+
+.food-card.avoid { border-left: 4px solid var(--high-fg); }
+
+.food-info { flex: 1; }
+.food-name { font-weight: 500; }
+.food-meta { font-size: 0.85rem; color: var(--muted); }
+
+.cat-badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-right: 0.5rem;
+}
+.cat-badge.low    { background: var(--low-bg);  color: var(--low-fg); }
+.cat-badge.medium { background: var(--med-bg);  color: var(--med-fg); }
+.cat-badge.high   { background: var(--high-bg); color: var(--high-fg); }
+
+/* Day items */
+.day-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    margin: 0.3rem 0;
+    background: #fafafa;
+    border-radius: 4px;
+}
+
+.day-item .qty {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: 0 0.5rem;
+}
+
+.day-item .qty input {
+    width: 4rem;
+    padding: 0.25rem;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+}
+
+.day-item .remove {
+    background: transparent;
+    color: var(--high-fg);
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    font-size: 1.1rem;
+}
+
+.empty {
+    color: var(--muted);
+    text-align: center;
+    padding: 1rem;
+    font-style: italic;
+}
+
+/* Totals */
+#totals-card {
+    background: #f5f5f5;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+.totals-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin-bottom: 0.4rem;
+}
+
+.totals-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    width: 4rem;
+}
+
+.totals-value {
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.totals-target {
+    color: var(--muted);
+    font-size: 0.9rem;
+}
+
+.progress-bar {
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    margin: 0.4rem 0;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    transition: width 0.3s ease;
+}
+
+.progress-fill.ug  { background: var(--bar-ug); }
+.progress-fill.pts { background: var(--bar-pts); }
+
+.progress-fill.over {
+    background: var(--high-fg) !important;
+}
+
+#warning {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: var(--high-fg);
+    font-weight: 500;
+}
+
+footer {
+    margin-top: 2rem;
+    padding: 1rem;
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+footer details summary {
+    cursor: pointer;
+    padding: 0.5rem 0;
+}
+
+footer .disclaimer {
+    background: var(--med-bg);
+    border-left: 3px solid var(--med-fg);
+    padding: 0.5rem 0.75rem;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+}
+
+@media (max-width: 480px) {
+    .search-controls { flex-direction: column; }
+}

@@ -1,0 +1,55 @@
+name: Deploy to CT 110 (Mace)
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Show context
+      run: |
+        echo "Hostname: $(hostname)"
+        echo "User: $(whoami)"
+        echo "Working dir: $PWD"
+        echo "GitHub workspace: $GITHUB_WORKSPACE"
+
+    - name: Deploy NickelTrack
+      run: |
+        set -e
+        APP_DIR=/opt/nickeltrack
+        echo "Syncing app code to ${APP_DIR}..."
+        mkdir -p ${APP_DIR}
+        # Sync app source + env_loader
+        cp -f app.py        ${APP_DIR}/app.py
+        cp -f env_loader.py ${APP_DIR}/env_loader.py
+        cp -rf templates    ${APP_DIR}/templates
+        cp -rf static       ${APP_DIR}/static
+        # Working dir for gunicorn (matches systemd unit's WorkingDirectory)
+        mkdir -p ${APP_DIR}/app
+        cp -f app.py        ${APP_DIR}/app/app.py
+        cp -f env_loader.py ${APP_DIR}/app/env_loader.py
+        echo "Files synced."
+
+    - name: Install/refresh Python dependencies
+      run: |
+        sudo -n /opt/nickeltrack/venv/bin/pip install --quiet -r requirements.txt
+        echo "Dependencies up to date."
+
+    - name: Restart nickeltrack service
+      run: |
+        sudo -n systemctl restart nickeltrack
+        sleep 2
+        sudo -n systemctl is-active nickeltrack
+
+    - name: Healthcheck
+      run: |
+        sleep 1
+        curl -fsS -o /dev/null -w "HTTP %{http_code} (app)\n" http://localhost:5100/
+        curl -fsS -o /dev/null -w "HTTP %{http_code} (api)\n" http://localhost:5100/api/config
+        echo "Deployment complete."
