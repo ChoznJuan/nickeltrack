@@ -280,6 +280,134 @@ async function renderDay() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// v2: Scanner (html5-qrcode)
+// ─────────────────────────────────────────────────────────────
+const scanBtn = document.getElementById("scan-btn");
+const scanViewport = document.getElementById("scan-viewport");
+const scanStatus = document.getElementById("scan-status");
+const scanStopBtn = document.getElementById("scan-stop");
+const scanResultDiv = document.getElementById("scan-result");
+
+let html5Qr = null;  // Html5Qrcode instance (lazily created on first scan)
+let scanning = false;
+
+async function startScanner() {
+    if (scanning) return;
+    if (typeof Html5Qrcode === "undefined") {
+        scanStatus.textContent = "Scanner library not loaded. Check your network.";
+        return;
+    }
+    scanBtn.disabled = true;
+    scanViewport.hidden = false;
+    scanResultDiv.innerHTML = "";
+    scanStatus.textContent = "Starting camera…";
+    if (!html5Qr) html5Qr = new Html5Qrcode("scan-reader");
+
+    // Use the rear camera if available, fall back to any camera
+    const config = {
+        fps: 10,
+        qrbox: { width: 280, height: 180 },
+        aspectRatio: 1.777778,  // 16:9
+        // Focus on formats relevant to packaged food: QR + 1D barcodes
+        formatsToSupport: [
+            Html5QrcodeSupportedFormats.QR_CODE,
+            Html5QrcodeSupportedFormats.EAN_13,
+            Html5QrcodeSupportedFormats.EAN_8,
+            Html5QrcodeSupportedFormats.UPC_A,
+            Html5QrcodeSupportedFormats.UPC_E,
+            Html5QrcodeSupportedFormats.CODE_128,
+            Html5QrcodeSupportedFormats.CODE_39,
+            Html5QrcodeSupportedFormats.ITF,
+        ],
+    };
+    try {
+        await html5Qr.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            () => {}  // ignore per-frame failures (decoding in progress)
+        );
+        scanning = true;
+        scanStatus.textContent = "Point camera at a barcode or QR code…";
+    } catch (err) {
+        scanStatus.textContent = `Camera failed: ${err.message || err}. You may need to grant camera permission.`;
+        scanBtn.disabled = false;
+    }
+}
+
+async function stopScanner() {
+    if (!scanning || !html5Qr) return;
+    try {
+        await html5Qr.stop();
+        await html5Qr.clear();
+    } catch (_) {}
+    scanning = false;
+    scanViewport.hidden = true;
+    scanBtn.disabled = false;
+    scanStatus.textContent = "";
+}
+
+async function onScanSuccess(decodedText) {
+    // Stop the scanner immediately so we don't keep scanning
+    await stopScanner();
+    scanResultDiv.innerHTML = `<p class="empty">Looking up <code>${escapeHtml(decodedText)}</code>…</p>`;
+    try {
+        const food = await api(`/api/lookup?barcode=${encodeURIComponent(decodedText)}`);
+        renderScanResult(food);
+    } catch (e) {
+        if (e.message.includes("404")) {
+            renderScanResult({ source_origin: "not_found", barcode: decodedText, message: "Not in our database or Open Food Facts." });
+        } else {
+            scanResultDiv.innerHTML = `<p class="empty">Lookup failed: ${escapeHtml(e.message)}</p>`;
+        }
+    }
+}
+
+function renderScanResult(food) {
+    if (food.source_origin === "not_found") {
+        scanResultDiv.innerHTML = `
+            <div class="scan-result-card notfound">
+                <h3>Not in database</h3>
+                <div class="meta">Barcode: <code>${escapeHtml(food.barcode || "")}</code></div>
+                <p>${escapeHtml(food.message || "This product isn't in our database or Open Food Facts.")}</p>
+            </div>
+        `;
+        return;
+    }
+    const isEstimate = food.source_origin === "off" && food.estimated;
+    const pts = food.avoid ? "AVOID" : (food.points ?? "—") + " pt";
+    const ug = food.nickel_ug_per_serving != null ? `${food.nickel_ug_per_serving} µg` : "—";
+    const serving = food.serving || "per serving";
+    const sourceLabel = food.source_origin === "local" ? "In our database" : "From Open Food Facts (estimate)";
+    const sourceIcon = food.source_origin === "local" ? "✅" : "🌐";
+
+    scanResultDiv.innerHTML = `
+        <div class="scan-result-card ${isEstimate ? "estimate" : ""}">
+            <h3>
+                <span class="cat-badge ${food.category}">${escapeHtml(food.category || "?")}</span>
+                ${escapeHtml(food.name)}
+                ${isEstimate ? '<span class="badge-estimate">⚠️ estimate</span>' : ""}
+            </h3>
+            <div class="meta">${sourceIcon} ${sourceLabel} · ${ug} · ${pts} · ${escapeHtml(serving)}</div>
+            ${isEstimate ? `<div class="meta">Nickel value is a category-based estimate, not a measured value. The exact value for this specific product may differ.</div>` : ""}
+            ${food.ingredients ? `<details><summary>Ingredients</summary><div class="meta">${escapeHtml(food.ingredients).slice(0, 600)}${food.ingredients.length > 600 ? "…" : ""}</div></details>` : ""}
+            <div class="actions">
+                <button class="add-btn" data-food-id="${food.id}">${food.avoid ? "Mark eaten" : "+ Add to day"}</button>
+                <button id="scan-again" type="button" class="secondary">Scan another</button>
+            </div>
+        </div>
+    `;
+    scanResultDiv.querySelector(".add-btn").addEventListener("click", () => addToDay(food.id));
+    scanResultDiv.querySelector("#scan-again").addEventListener("click", () => {
+        scanResultDiv.innerHTML = "";
+        startScanner();
+    });
+}
+
+scanBtn.addEventListener("click", startScanner);
+scanStopBtn.addEventListener("click", stopScanner);
+
+// ─────────────────────────────────────────────────────────────
 // Init
 // ─────────────────────────────────────────────────────────────
 (async function init() {

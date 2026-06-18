@@ -19,6 +19,9 @@
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 
+    <!-- html5-qrcode: ~5MB, supports QR + 1D barcodes (UPC, EAN, Code128) -->
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
     <script>
       // Register the service worker as early as possible so the
       // app shell gets cached on first visit.
@@ -53,7 +56,18 @@
                     <option value="medium">Medium (100–500)</option>
                     <option value="high">High (&gt;500)</option>
                 </select>
+                <button id="scan-btn" type="button" class="scan-btn" title="Scan a barcode or QR code">
+                    📷 Scan
+                </button>
             </div>
+            <div id="scan-viewport" hidden>
+                <div id="scan-reader"></div>
+                <div class="scan-controls">
+                    <button id="scan-stop" type="button" class="secondary">Cancel</button>
+                    <span id="scan-status" class="scan-status"></span>
+                </div>
+            </div>
+            <div id="scan-result"></div>
             <div id="search-results"></div>
         </section>
 
