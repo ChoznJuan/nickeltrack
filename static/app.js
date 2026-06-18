@@ -330,7 +330,24 @@ async function startScanner() {
         scanning = true;
         scanStatus.textContent = "Point camera at a barcode or QR code…";
     } catch (err) {
-        scanStatus.textContent = `Camera failed: ${err.message || err}. You may need to grant camera permission.`;
+        // Surface the underlying html5-qrcode error. Two common ones:
+        //   "NotAllowedError"  → user denied the permission prompt
+        //   "NotReadableError" or "NotSupportedError" →
+        //       usually means the browser blocked camera access because the
+        //       page is on an insecure origin (http://192.168.x.x:5100).
+        //       Android Chrome requires HTTPS (or localhost) for getUserMedia.
+        //       Workaround for dev: chrome://flags/#unsafely-treat-insecure-origin-as-secure
+        //       Real fix: tunnel the app via cloudflared.
+        const msg = (err && err.message) || String(err);
+        let hint = "You may need to grant camera permission.";
+        if (/secure|insecure|https|origin/i.test(msg) || err?.name === "NotSupportedError") {
+            hint = "This page is served over plain HTTP, and Android Chrome blocks camera access on insecure origins. Either (a) open chrome://flags/#unsafely-treat-insecure-origin-as-secure and add this URL, or (b) expose the app over HTTPS via a cloudflared tunnel.";
+        } else if (err?.name === "NotAllowedError") {
+            hint = "You denied camera permission. Tap the camera icon in the URL bar to allow it, then try again.";
+        } else if (err?.name === "NotFoundError") {
+            hint = "No camera found on this device.";
+        }
+        scanStatus.textContent = `Camera failed: ${msg}. ${hint}`;
         scanBtn.disabled = false;
     }
 }
